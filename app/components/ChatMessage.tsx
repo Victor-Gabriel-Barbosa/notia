@@ -1,5 +1,5 @@
-import React from 'react';
-import { Bot, Check, Copy } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, Copy, Lightbulb, ChevronDown } from 'lucide-react';
 import { CodeBlock } from './CodeBlock';
 import { Message } from '../types/chat';
 import ReactMarkdown from 'react-markdown';
@@ -25,6 +25,7 @@ const preprocessLaTeX = (content: string) => {
 };
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMessageIndex, handleCopyMessage }) => {
+  const [showReasoning, setShowReasoning] = useState(false);
   return (
     <div className={`flex gap-4 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
       
@@ -34,6 +35,49 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
           : 'text-gray-100 bg-transparent px-0'
       }`}>
         
+        {msg.reasoning && (
+          <div className="mb-3 pb-3 border-b border-gray-700">
+            <button
+              onClick={() => setShowReasoning(!showReasoning)}
+              className="flex items-center gap-2 text-xs font-medium text-sky-400 hover:text-sky-300 transition-colors"
+            >
+              <Lightbulb size={14} />
+              Mostrar raciocínio
+              <ChevronDown size={14} className={`transition-transform ${showReasoning ? 'rotate-180' : ''}`} />
+            </button>
+            {showReasoning && (
+              <div className="mt-2 p-3 bg-sky-950/30 border border-sky-900/50 rounded-lg text-xs text-sky-100/90 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-200">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                  components={{
+                    pre: ({children}) => <div className="w-full overflow-x-auto">{children}</div>,
+                    code(props) {
+                      const {children, className, ...rest} = props;
+                      const match = /language-(\w+)/.exec(className || '');
+                      return match ? (
+                        <CodeBlock 
+                          language={match[1]} 
+                          code={String(children).replace(/\n$/, '')} 
+                        />
+                      ) : (
+                        <code className="bg-sky-900/50 text-sky-100 px-1.5 py-0.5 rounded text-xs font-mono wrap-break-word" {...rest}>
+                          {children}
+                        </code>
+                      );
+                    },
+                    strong: ({children}) => <strong className="font-semibold text-sky-100">{children}</strong>,
+                    a: ({children, href}) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline break-all">{children}</a>,
+                    p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>
+                  }}
+                >
+                  {preprocessLaTeX(msg.reasoning)}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="whitespace-pre-wrap wrap-break-word leading-relaxed space-y-2 w-full max-w-full">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}

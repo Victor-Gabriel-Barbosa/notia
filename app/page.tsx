@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Plus, Bot, BotMessageSquare, Send, Square } from 'lucide-react';
-import { Chat, Message } from './types/chat';
+import { Menu, Plus, Bot, BotMessageSquare, Send, Square, Lightbulb, LightbulbOff } from 'lucide-react';
+import { Chat, Message, OpenRouterModel } from './types/chat';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
 import { SettingsModal } from './components/SettingsModal';
@@ -18,12 +18,14 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
-  
+  const [reasoningEnabled, setReasoningEnabled] = useState<boolean>(true);
+  const [availableModels, setAvailableModels] = useState<{id: string, name: string}[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState<boolean>(true);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Efeitos de LocalStorage (mantidos iguais)
   useEffect(() => {
     const savedKey = localStorage.getItem('openrouter_key');
     if (savedKey) setApiKey(savedKey);
@@ -62,7 +64,7 @@ export default function App() {
   useEffect(() => {
     if (isMounted) localStorage.setItem('chats', JSON.stringify(chats));
   }, [chats, isMounted]);
-  
+
   useEffect(() => {
     if (isMounted) localStorage.setItem('openrouter_key', apiKey);
   }, [apiKey, isMounted]);
@@ -70,6 +72,37 @@ export default function App() {
   useEffect(() => {
     if (isMounted) localStorage.setItem('selected_model', selectedModel);
   }, [selectedModel, isMounted]);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/models');
+        if (!response.ok) throw new Error('Erro ao buscar modelos');
+        
+        const data = await response.json();
+        
+        const models = data.data.map((m: OpenRouterModel) => ({
+          id: m.id,
+          name: m.name
+        }));
+
+        models.sort((a: {name: string}, b: {name: string}) => a.name.localeCompare(b.name));
+        
+        setAvailableModels(models);
+      } catch (error) {
+        console.error("Falha ao carregar modelos da OpenRouter:", error);
+        setAvailableModels([
+          { id: "openrouter/free", name: "OpenRouter Free (Fallback)" },
+          { id: "google/gemini-pro", name: "Gemini Pro (Fallback)" }
+        ]);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, []);
 
   if (!isMounted) return <div className="flex h-screen w-full bg-gray-900" />;
 
@@ -105,8 +138,8 @@ export default function App() {
 
     const userMessage: Message = { role: 'user', content: input.trim() };
     const updatedMessages = [...currentChat.messages, userMessage];
-    
-    let {title} = currentChat;
+
+    let { title } = currentChat;
     if (currentChat.messages.length === 0) {
       title = input.length > 35 ? input.substring(0, 35) + '...' : input;
     }
@@ -129,7 +162,8 @@ export default function App() {
         },
         body: JSON.stringify({
           model: selectedModel,
-          messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
+          messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
+          ...(reasoningEnabled && { reasoning: { type: "enabled" } })
         }),
         signal: abortController.signal
       });
@@ -140,9 +174,15 @@ export default function App() {
       }
 
       const data = await response.json();
-      const assistantMessage: Message = { role: 'assistant', content: data.choices[0].message.content };
+      console.log('API Response:', data);
+      const messageData = data.choices[0].message;
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: messageData.content,
+        reasoning: messageData.reasoning || undefined
+      };
 
-      setChats(prevChats => prevChats.map(c => 
+      setChats(prevChats => prevChats.map(c =>
         c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMessage] } : c
       ));
     } catch (error: unknown) {
@@ -153,12 +193,12 @@ export default function App() {
 
       console.error(error);
       const errorMsg = error instanceof Error ? error.message : "Um erro desconhecido ocorreu.";
-      const errorMessage: Message = { 
-        role: 'assistant', 
-        content: `**Erro:**\n\`\`\`\n${errorMsg}\n\`\`\`\n\nPor favor, verifique sua conexão com a internet e a chave da API em Configurações.` 
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: `**Erro:**\n\`\`\`\n${errorMsg}\n\`\`\`\n\nPor favor, verifique sua conexão com a internet e a chave da API em Configurações.`
       };
-      
-      setChats(prevChats => prevChats.map(c => 
+
+      setChats(prevChats => prevChats.map(c =>
         c.id === currentChatId ? { ...c, messages: [...c.messages, errorMessage] } : c
       ));
     } finally {
@@ -184,7 +224,7 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-gray-900 text-gray-100 font-sans">
-      <Sidebar 
+      <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         chats={chats}
@@ -220,12 +260,12 @@ export default function App() {
             ) : (
               <div className="space-y-6">
                 {currentChat.messages.map((msg, i) => (
-                  <ChatMessage 
-                    key={i} 
-                    msg={msg} 
-                    index={i} 
-                    copiedMessageIndex={copiedMessageIndex} 
-                    handleCopyMessage={handleCopyMessage} 
+                  <ChatMessage
+                    key={i}
+                    msg={msg}
+                    index={i}
+                    copiedMessageIndex={copiedMessageIndex}
+                    handleCopyMessage={handleCopyMessage}
                   />
                 ))}
                 {isLoading && (
@@ -260,21 +300,58 @@ export default function App() {
                 }
               }}
               placeholder="Mensagem..."
-              className="w-full max-h-50 min-h-14 py-4 pl-4 pr-14 bg-transparent text-white resize-none focus:outline-none overflow-y-auto"
+              className="w-full max-h-50 min-h-14 py-4 pl-4 pr-4 bg-transparent text-white resize-none focus:outline-none overflow-y-auto"
               rows={1}
             />
-            <button
-              onClick={isLoading ? handleStop : handleSend}
-              disabled={!isLoading && !input.trim()}
-              className={`absolute right-2.5 bottom-2.5 p-2 rounded-xl transition-all ${
-                isLoading 
-                  ? 'bg-sky-600 text-white hover:bg-sky-700' 
-                  : input.trim() ? 'bg-white text-black hover:bg-gray-200' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
-              title={isLoading ? "Parar geração" : "Enviar mensagem"}
-            >
-              {isLoading ? <Square size={18} fill="currentColor" /> : <Send size={18} />}
-            </button>
+            <div className="flex items-center justify-between px-4 pb-3 pt-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setReasoningEnabled(!reasoningEnabled)}
+                  title={reasoningEnabled ? "Desabilitar reasoning" : "Habilitar reasoning"}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${reasoningEnabled
+                      ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 border border-sky-500/50'
+                      : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50 border border-gray-600/50'
+                    }`}
+                >
+                  {reasoningEnabled ? <Lightbulb size={14} /> : <LightbulbOff size={14} />}
+                  <span>Reasoning</span>
+                </button>
+
+                <select
+                  name={"model-select"}
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full bg-gray-700/50 text-white border border-gray-600/50 text-xs font-medium rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all cursor-pointer appearance-none"
+                  title="Selecionar modelo"
+                >
+                  {isLoadingModels ? (
+                    <option value="loading">Carregando modelos...</option>
+                  ) : (
+                    availableModels.map((model) => (
+                      <option 
+                        key={model.id} 
+                        value={model.id}
+                        className="bg-gray-800 text-gray-200" 
+                      >
+                        {model.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <button
+                onClick={isLoading ? handleStop : handleSend}
+                disabled={!isLoading && !input.trim()}
+                className={`p-2 rounded-xl transition-all ${isLoading
+                    ? 'bg-sky-600 text-white hover:bg-sky-700'
+                    : input.trim() ? 'bg-white text-black hover:bg-gray-200' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                  }`}
+                title={isLoading ? "Parar geração" : "Enviar mensagem"}
+              >
+                {isLoading ? <Square size={18} fill="currentColor" /> : <Send size={18} />}
+              </button>
+            </div>
           </div>
           <div className="text-center mt-3">
             <p className="text-xs text-gray-500">
@@ -285,12 +362,14 @@ export default function App() {
       </div>
 
       {settingsOpen && (
-        <SettingsModal 
-          apiKey={apiKey} 
-          setApiKey={setApiKey} 
-          selectedModel={selectedModel} 
-          setSelectedModel={setSelectedModel} 
-          onClose={() => setSettingsOpen(false)} 
+        <SettingsModal
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          selectedModel={selectedModel}
+          setSelectedModel={setSelectedModel}
+          onClose={() => setSettingsOpen(false)}
+          availableModels={availableModels}
+          isLoadingModels={isLoadingModels}
         />
       )}
     </div>

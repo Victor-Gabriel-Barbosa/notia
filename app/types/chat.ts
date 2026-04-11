@@ -1,6 +1,7 @@
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  reasoning?: string;
 }
 
 export interface Chat {
@@ -12,4 +13,9 @@ export interface Chat {
 export interface CodeBlockProps {
   language: string;
   code: string;
+}
+
+export interface OpenRouterModel {
+  id: string;
+  name: string;
 }

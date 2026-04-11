@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, X, ExternalLink } from 'lucide-react';
+import { OpenRouterModel } from '../types/chat';
 
 interface SettingsModalProps {
   apiKey: string;
@@ -7,35 +8,19 @@ interface SettingsModalProps {
   selectedModel: string;
   setSelectedModel: (model: string) => void;
   onClose: () => void;
+  availableModels: OpenRouterModel[];
+  isLoadingModels: boolean;
 }
 
-const PREDEFINED_MODELS = [
-  { id: "openrouter/free", name: "Free Models Router" },
-  { id: "google/gemma-4-26b-a4b-it:free", name: "Google: Gemma 4 26B A4B (free)" },
-  { id: "google/gemma-4-31b-it:free", name: "Google: Gemma 4 31B (free)" },
-  { id: "nvidia/nemotron-3-super-120b-a12b:free", name: "NVIDIA: Nemotron 3 Super (free)" },
-  { id: "z-ai/glm-4.5-air:free", name: "Z.ai: GLM 4.5 Air (free)" },
-  { id: "minimax/minimax-m2.5:free", name: "MiniMax: MiniMax M2.5 (free)" },
-];
-
 export const SettingsModal: React.FC<SettingsModalProps> = ({
-  apiKey, setApiKey, selectedModel, setSelectedModel, onClose
+  apiKey, setApiKey, selectedModel, setSelectedModel, onClose, availableModels, isLoadingModels
 }) => {
-  const isPredefined = PREDEFINED_MODELS.some(m => m.id === selectedModel);
-  
-  const [selectMode, setSelectMode] = useState<string>(isPredefined ? selectedModel : 'other');
-  const [manualModel, setManualModel] = useState<string>(isPredefined ? '' : selectedModel);
+  const [selectMode, setSelectMode] = useState<string>(selectedModel);
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const {value} = e.target;
     setSelectMode(value);
     
-    setSelectedModel((value !== 'other') ? value : manualModel);
-  };
-
-  const handleManualInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const {value} = e.target;
-    setManualModel(value);
     setSelectedModel(value);
   };
 
@@ -55,8 +40,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">OpenRouter API Key</label>
+            <label htmlFor="api-key-input" className="block text-sm font-medium text-gray-300 mb-2">OpenRouter API Key</label>
             <input 
+              id="api-key-input"
               type="password" 
               value={apiKey} 
               onChange={(e) => setApiKey(e.target.value)}
@@ -82,32 +68,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Modelo OpenRouter</label>
             <select
+              name={"model-select"}
               value={selectMode}
               onChange={handleSelectChange}
               className="w-full bg-[#171717] border border-gray-700 rounded-md px-3 py-2 text-white focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 appearance-none"
             >
-              {PREDEFINED_MODELS.map(model => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))}
+              {isLoadingModels ? (
+                <option value="loading">Carregando modelos...</option>
+              ) : (
+                availableModels.map((model) => (
+                  <option 
+                    key={model.id} 
+                    value={model.id}
+                    className="bg-gray-800 text-gray-200" 
+                  >
+                    {model.name}
+                  </option>
+                ))
+              )}
               <option value="other">Outro (Inserir manualmente)</option>
             </select>
-
-            {selectMode === 'other' && (
-              <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                <input 
-                  type="text" 
-                  value={manualModel} 
-                  onChange={handleManualInputChange}
-                  className="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-                  placeholder="Ex: anthropic/claude-3-opus"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Digite o ID exato do modelo conforme a documentação do OpenRouter.
-                </p>
-              </div>
-            )}
 
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-gray-500">
