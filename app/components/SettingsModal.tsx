@@ -27,14 +27,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [manualModel, setManualModel] = useState<string>(isPredefined ? '' : selectedModel);
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+    const {value} = e.target;
     setSelectMode(value);
     
     setSelectedModel((value !== 'other') ? value : manualModel);
   };
 
   const handleManualInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const {value} = e.target;
     setManualModel(value);
     setSelectedModel(value);
   };

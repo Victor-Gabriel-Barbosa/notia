@@ -1,5 +1,5 @@
-import React from 'react';
-import { MessageSquare, Plus, Trash2, Settings, PanelLeftClose, PanelLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MessageSquare, Plus, EllipsisVertical, Settings, PanelLeftClose, PanelLeft, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { Chat } from '../types/chat';
 import Image from 'next/image';
@@ -12,12 +12,51 @@ interface SidebarProps {
   setCurrentChatId: (id: number) => void;
   createNewChat: () => void;
   deleteChat: (e: React.MouseEvent<HTMLButtonElement>, id: number) => void;
+  renameChat: (id: number, newTitle: string) => void;
   setSettingsOpen: (open: boolean) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  sidebarOpen, setSidebarOpen, chats, currentChatId, setCurrentChatId, createNewChat, deleteChat, setSettingsOpen
+  sidebarOpen, setSidebarOpen, chats, currentChatId, setCurrentChatId, createNewChat, deleteChat, renameChat, setSettingsOpen
 }) => {
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [editingChatId, setEditingChatId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-menu-trigger]')) setOpenMenuId(null);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (editingChatId !== null && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingChatId]);
+
+  const handleSaveRename = (chatId: number) => {
+    if (editingName.trim()) renameChat(chatId, editingName.trim());
+    setEditingChatId(null);
+    setEditingName('');
+  };
+
+  const handleCancelRename = () => {
+    setEditingChatId(null);
+    setEditingName('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, chatId: number) => {
+    if (e.key === 'Enter') handleSaveRename(chatId);
+    else if (e.key === 'Escape') handleCancelRename();
+  };
+
   return (
     <>
       {sidebarOpen && (
@@ -63,41 +102,86 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <div className={`flex-1 overflow-y-auto ${sidebarOpen ? 'p-3' : 'p-2 flex flex-col items-center'} space-y-1 scrollbar-none`}>
-          {sidebarOpen && <p className="px-3 text-xs font-semibold text-gray-500 mb-2 mt-2">Recent</p>}
+          {sidebarOpen && <p className="px-3 text-xs font-semibold text-gray-500 mb-2 mt-2">Recentes</p>}
           {chats.map(chat => (
             <div 
               key={chat.id}
               onClick={() => {
-                setCurrentChatId(chat.id);
-                if (typeof window !== 'undefined' && window.innerWidth < 768) setSidebarOpen(false);
+                if (editingChatId === null) {
+                  setCurrentChatId(chat.id);
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) setSidebarOpen(false);
+                }
               }}
               className={`group flex items-center ${sidebarOpen ? 'justify-between px-3 w-full py-2.5' : 'justify-center w-10 h-10 mt-1'} rounded-lg cursor-pointer transition-all ${
                 currentChatId === chat.id ? 'bg-gray-800/80 text-white' : 'text-gray-400 hover:bg-gray-900 hover:text-gray-200'
               }`}
               title={!sidebarOpen ? chat.title : undefined}
             >
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className={`flex items-center ${sidebarOpen ? 'gap-3 overflow-hidden flex-1' : ''}`}>
                 <MessageSquare size={16} className="shrink-0 opacity-80" />
-                {sidebarOpen && <span className="truncate text-sm font-medium">{chat.title}</span>}
+                {sidebarOpen && (
+                  editingChatId === chat.id ? (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, chat.id)}
+                      onBlur={() => handleSaveRename(chat.id)}
+                      className="truncate text-sm font-medium bg-gray-800 text-white px-2 py-1 rounded outline-none flex-1"
+                    />
+                  ) : (
+                    <span className="truncate text-sm font-medium">{chat.title}</span>
+                  )
+                )}
               </div>
-              {sidebarOpen && (
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteChat(e, chat.id);
-                  }}
-                  className={`shrink-0 text-gray-500 hover:text-red-400 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity ${
-                    currentChatId === chat.id ? 'opacity-100' : ''
-                  }`}
-                >
-                  <Trash2 size={14} />
-                </button>
+              {sidebarOpen && editingChatId === null && (
+                <div className="relative" data-menu-trigger>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === chat.id ? null : chat.id);
+                    }}
+                    className={`shrink-0 text-gray-500 hover:text-gray-300 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity ${
+                      currentChatId === chat.id ? 'opacity-100' : ''
+                    }`}
+                  >
+                    <EllipsisVertical size={14} />
+                  </button>
+                  {openMenuId === chat.id && (
+                    <div className="absolute right-0 top-full mt-1 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 min-w-32">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingChatId(chat.id);
+                          setEditingName(chat.title);
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-t-lg transition-colors"
+                      >
+                        <Pencil size={14} />
+                        Renomear
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteChat(e, chat.id);
+                          setOpenMenuId(null);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-red-400 hover:bg-gray-800 rounded-b-lg transition-colors"
+                      >
+                        <Trash2 size={14} />
+                        Excluir
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ))}
         </div>
 
-        <div className={`p-3 border-t border-gray-800/50 flex ${!sidebarOpen ? 'justify-center' : ''}`}>
+        <div className={`p-3 border-t border-gray-800/50 flex ${sidebarOpen ? '' : 'justify-center'}`}>
           <button 
             onClick={() => setSettingsOpen(true)}
             className={`flex items-center ${sidebarOpen ? 'justify-start px-3 w-full py-3' : 'justify-center w-10 h-10'} hover:bg-gray-900 text-gray-400 hover:text-white rounded-lg transition-colors`}

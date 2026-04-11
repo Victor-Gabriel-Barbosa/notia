@@ -27,11 +27,6 @@ const preprocessLaTeX = (content: string) => {
 export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMessageIndex, handleCopyMessage }) => {
   return (
     <div className={`flex gap-4 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-      {msg.role === 'assistant' && (
-        <div className="w-8 h-8 rounded-full border border-gray-700 bg-black flex items-center justify-center shrink-0 mt-1 shadow-sm">
-          <Bot size={18} className="text-gray-200" />
-        </div>
-      )}
       
       <div className={`group relative max-w-[90%] sm:max-w-[80%] rounded-3xl px-5 py-3.5 ${
         msg.role === 'user' 
@@ -46,7 +41,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
             components={{
               pre: ({children}) => <div className="w-full overflow-x-auto">{children}</div>,
               code(props) {
-                const {children, className, node, ...rest} = props;
+                const {children, className, ...rest} = props;
                 const match = /language-(\w+)/.exec(className || '');
                 return match ? (
                   <CodeBlock 

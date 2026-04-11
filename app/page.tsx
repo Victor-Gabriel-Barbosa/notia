@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Plus, Bot, Send, Square } from 'lucide-react';
+import { Menu, Plus, Bot, BotMessageSquare, Send, Square } from 'lucide-react';
 import { Chat, Message } from './types/chat';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
@@ -96,13 +96,17 @@ export default function App() {
     }
   };
 
+  const renameChat = (id: number, newTitle: string) => {
+    setChats(chats.map(c => c.id === id ? { ...c, title: newTitle } : c));
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: input.trim() };
     const updatedMessages = [...currentChat.messages, userMessage];
     
-    let title = currentChat.title;
+    let {title} = currentChat;
     if (currentChat.messages.length === 0) {
       title = input.length > 35 ? input.substring(0, 35) + '...' : input;
     }
@@ -188,6 +192,7 @@ export default function App() {
         setCurrentChatId={setCurrentChatId}
         createNewChat={createNewChat}
         deleteChat={deleteChat}
+        renameChat={renameChat}
         setSettingsOpen={setSettingsOpen}
       />
 
@@ -226,7 +231,7 @@ export default function App() {
                 {isLoading && (
                   <div className="flex gap-4 w-full justify-start">
                     <div className="w-8 h-8 rounded-full border border-gray-700 bg-black flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                      <Bot size={18} className="text-gray-200" />
+                      <BotMessageSquare size={18} className="text-gray-200" />
                     </div>
                     <div className="flex items-center gap-1.5 px-2 py-4">
                       <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
@@ -273,7 +278,7 @@ export default function App() {
           </div>
           <div className="text-center mt-3">
             <p className="text-xs text-gray-500">
-              Powered by OpenRouter. A IA pode cometer erros. Considere verificar informações importantes.
+              O Notia é uma IA e pode cometer erros.
             </p>
           </div>
         </div>
