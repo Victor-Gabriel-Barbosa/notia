@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, Plus, Bot, BotMessageSquare, Send, Square, Lightbulb, LightbulbOff } from 'lucide-react';
+import { Plus, Bot, BotMessageSquare, Send, Square, Lightbulb, LightbulbOff, Menu } from 'lucide-react';
 import { Chat, Message, OpenRouterModel } from './types/chat';
 import { Sidebar } from './components/Sidebar';
 import { ChatMessage } from './components/ChatMessage';
@@ -21,6 +21,7 @@ export default function App() {
   const [reasoningEnabled, setReasoningEnabled] = useState<boolean>(true);
   const [availableModels, setAvailableModels] = useState<{id: string, name: string}[]>([]);
   const [isLoadingModels, setIsLoadingModels] = useState<boolean>(true);
+  const [theme, setTheme] = useState<string>('system');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -32,6 +33,9 @@ export default function App() {
 
     const savedModel = localStorage.getItem('selected_model');
     if (savedModel) setSelectedModel(savedModel);
+
+    const savedTheme = localStorage.getItem('app_theme');
+    if (savedTheme) setTheme(savedTheme);
 
     try {
       const savedChats = localStorage.getItem('chats');
@@ -49,6 +53,22 @@ export default function App() {
     }
     setIsMounted(true);
   }, []);
+
+  // Lógica de alteração do tema
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    localStorage.setItem('app_theme', theme);
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+  }, [theme, isMounted]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -104,7 +124,7 @@ export default function App() {
     fetchModels();
   }, []);
 
-  if (!isMounted) return <div className="flex h-screen w-full bg-gray-900" />;
+  if (!isMounted) return <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-900" />;
 
   const currentChat = chats.find(c => c.id === currentChatId) || chats[0];
 
@@ -174,7 +194,6 @@ export default function App() {
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
       const messageData = data.choices[0].message;
       const assistantMessage: Message = {
         role: 'assistant',
@@ -187,7 +206,6 @@ export default function App() {
       ));
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Geração de resposta cancelada pelo usuário');
         return;
       }
 
@@ -223,7 +241,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-900 text-gray-100 font-sans">
+    <div className="flex h-screen w-full bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -234,15 +252,17 @@ export default function App() {
         deleteChat={deleteChat}
         renameChat={renameChat}
         setSettingsOpen={setSettingsOpen}
+        theme={theme}
+        setTheme={setTheme}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 bg-gray-900 h-screen">
-        <div className="md:hidden flex items-center justify-between p-3 border-b border-gray-800 bg-gray-900 z-10">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 h-screen transition-colors duration-200">
+        <div className="md:hidden flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-10 transition-colors duration-200">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-colors">
             <Menu size={20} />
           </button>
-          <span className="font-medium truncate max-w-50 text-gray-200">{currentChat.title}</span>
-          <button onClick={createNewChat} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400">
+          <span className="font-medium truncate max-w-50 text-slate-800 dark:text-slate-200">{currentChat.title}</span>
+          <button onClick={createNewChat} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-colors">
             <Plus size={20} />
           </button>
         </div>
@@ -251,11 +271,11 @@ export default function App() {
           <div className="p-4 md:p-6 pb-4 max-w-5xl mx-auto w-full min-h-full flex flex-col justify-top">
             {currentChat.messages.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center my-auto pb-20">
-                <div className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center mb-6 shadow-lg shadow-white/5">
+                <div className="w-16 h-16 bg-slate-900 text-white dark:bg-white dark:text-black rounded-full flex items-center justify-center mb-6 shadow-lg shadow-black/5 dark:shadow-white/5 transition-colors duration-200">
                   <Bot size={32} />
                 </div>
-                <h2 className="text-2xl font-semibold text-white mb-2">Como posso te ajudar hoje?</h2>
-                <p className="text-gray-400 text-sm">Powered by OpenRouter</p>
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2 transition-colors">Como posso te ajudar hoje?</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm transition-colors">Powered by OpenRouter</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -270,13 +290,13 @@ export default function App() {
                 ))}
                 {isLoading && (
                   <div className="flex gap-4 w-full justify-start">
-                    <div className="w-8 h-8 rounded-full border border-gray-700 bg-black flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                      <BotMessageSquare size={18} className="text-gray-200" />
+                    <div className="w-8 h-8 rounded-full border border-slate-300 bg-slate-100 dark:border-slate-700 dark:bg-black flex items-center justify-center shrink-0 mt-1 shadow-sm transition-colors duration-200">
+                      <BotMessageSquare size={18} className="text-slate-700 dark:text-slate-200" />
                     </div>
                     <div className="flex items-center gap-1.5 px-2 py-4">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
                   </div>
                 )}
@@ -286,8 +306,8 @@ export default function App() {
           </div>
         </div>
 
-        <div className="w-full shrink-0 bg-gray-900 pt-2 pb-4 px-4 z-10 border-t border-gray-800 md:border-transparent md:bg-linear-to-t md:from-gray-900 md:via-gray-900 md:to-transparent">
-          <div className="max-w-3xl mx-auto relative flex flex-col bg-gray-800 border border-gray-700 rounded-2xl shadow-xl focus-within:ring-1 focus-within:ring-sky-500 transition-shadow">
+        <div className="w-full shrink-0 bg-white dark:bg-slate-900 pb-4 px-4 z-10 md:bg-gradient-to-t md:from-white md:via-white dark:md:from-slate-900 dark:md:via-slate-900 md:to-transparent transition-colors duration-200">
+          <div className="max-w-3xl mx-auto relative flex flex-col bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl shadow-xl focus-within:ring-1 focus-within:ring-sky-500 transition-all duration-200">
             <textarea
               id="chat-input"
               ref={textareaRef}
@@ -300,17 +320,17 @@ export default function App() {
                 }
               }}
               placeholder="Mensagem..."
-              className="w-full max-h-50 min-h-14 py-4 pl-4 pr-4 bg-transparent text-white resize-none focus:outline-none overflow-y-auto"
+              className="w-full max-h-50 min-h-14 py-4 pl-4 pr-4 bg-transparent text-slate-900 dark:text-white resize-none focus:outline-none overflow-y-auto placeholder:text-slate-500 dark:placeholder:text-slate-400"
               rows={1}
             />
-            <div className="flex items-center justify-between px-4 pb-3 pt-2">
+            <div className="flex items-center justify-between px-4 pb-3 pt-2 gap-2">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setReasoningEnabled(!reasoningEnabled)}
                   title={reasoningEnabled ? "Desabilitar reasoning" : "Habilitar reasoning"}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${reasoningEnabled
-                      ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 border border-sky-500/50'
-                      : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50 border border-gray-600/50'
+                      ? 'bg-sky-100 text-sky-600 border border-sky-300 hover:bg-sky-200 dark:bg-sky-500/20 dark:text-sky-400 dark:hover:bg-sky-500/30 dark:border-sky-500/50'
+                      : 'bg-slate-200 text-slate-600 border border-slate-300 hover:bg-slate-300 dark:bg-slate-700/50 dark:text-slate-400 dark:hover:bg-slate-600/50 dark:border-slate-600/50'
                     }`}
                 >
                   {reasoningEnabled ? <Lightbulb size={14} /> : <LightbulbOff size={14} />}
@@ -321,7 +341,7 @@ export default function App() {
                   name={"model-select"}
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full bg-gray-700/50 text-white border border-gray-600/50 text-xs font-medium rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all cursor-pointer appearance-none"
+                  className="w-full bg-white text-slate-900 border border-slate-300 dark:bg-slate-700/50 dark:text-white dark:border-slate-600/50 text-xs font-medium rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all cursor-pointer appearance-none"
                   title="Selecionar modelo"
                 >
                   {isLoadingModels ? (
@@ -331,7 +351,7 @@ export default function App() {
                       <option 
                         key={model.id} 
                         value={model.id}
-                        className="bg-gray-800 text-gray-200" 
+                        className="bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-200" 
                       >
                         {model.name}
                       </option>
@@ -345,7 +365,9 @@ export default function App() {
                 disabled={!isLoading && !input.trim()}
                 className={`p-2 rounded-xl transition-all ${isLoading
                     ? 'bg-sky-600 text-white hover:bg-sky-700'
-                    : input.trim() ? 'bg-white text-black hover:bg-gray-200' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    : input.trim() 
+                      ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200' 
+                      : 'bg-slate-300 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
                   }`}
                 title={isLoading ? "Parar geração" : "Enviar mensagem"}
               >
@@ -354,7 +376,7 @@ export default function App() {
             </div>
           </div>
           <div className="text-center mt-3">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-500 dark:text-slate-500">
               O Notia é uma IA e pode cometer erros.
             </p>
           </div>

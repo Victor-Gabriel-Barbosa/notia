@@ -26,27 +26,28 @@ const preprocessLaTeX = (content: string) => {
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMessageIndex, handleCopyMessage }) => {
   const [showReasoning, setShowReasoning] = useState(false);
+  
   return (
     <div className={`flex gap-4 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
       
-      <div className={`group relative max-w-[90%] sm:max-w-[80%] rounded-3xl px-5 py-3.5 ${
+      <div className={`group relative max-w-[90%] sm:max-w-[80%] rounded-3xl px-5 py-3.5 transition-colors ${
         msg.role === 'user' 
-          ? 'bg-gray-700 text-white' 
-          : 'text-gray-100 bg-transparent px-0'
+          ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' 
+          : 'text-slate-900 dark:text-slate-100 bg-transparent px-0'
       }`}>
         
         {msg.reasoning && (
-          <div className="mb-3 pb-3 border-b border-gray-700">
+          <div className="mb-3 pb-3 border-b border-slate-300 dark:border-slate-700 transition-colors">
             <button
               onClick={() => setShowReasoning(!showReasoning)}
-              className="flex items-center gap-2 text-xs font-medium text-sky-400 hover:text-sky-300 transition-colors"
+              className="flex items-center gap-2 text-xs font-medium text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300 transition-colors"
             >
               <Lightbulb size={14} />
               Mostrar raciocínio
               <ChevronDown size={14} className={`transition-transform ${showReasoning ? 'rotate-180' : ''}`} />
             </button>
             {showReasoning && (
-              <div className="mt-2 p-3 bg-sky-950/30 border border-sky-900/50 rounded-lg text-xs text-sky-100/90 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="mt-2 p-3 bg-sky-50 border border-sky-200 text-sky-900 dark:bg-sky-950/30 dark:border-sky-900/50 rounded-lg text-xs dark:text-sky-100/90 leading-relaxed animate-in fade-in slide-in-from-top-2 duration-200 transition-colors">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkMath]}
                   rehypePlugins={[rehypeKatex]}
@@ -61,13 +62,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
                           code={String(children).replace(/\n$/, '')} 
                         />
                       ) : (
-                        <code className="bg-sky-900/50 text-sky-100 px-1.5 py-0.5 rounded text-xs font-mono wrap-break-word" {...rest}>
+                        <code className="bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-100 px-1.5 py-0.5 rounded text-xs font-mono wrap-break-word transition-colors" {...rest}>
                           {children}
                         </code>
                       );
                     },
-                    strong: ({children}) => <strong className="font-semibold text-sky-100">{children}</strong>,
-                    a: ({children, href}) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline break-all">{children}</a>,
+                    strong: ({children}) => <strong className="font-semibold text-sky-950 dark:text-sky-100 transition-colors">{children}</strong>,
+                    a: ({children, href}) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:underline break-all transition-colors">{children}</a>,
                     p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>
                   }}
                 >
@@ -93,7 +94,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
                     code={String(children).replace(/\n$/, '')} 
                   />
                 ) : (
-                  <code className="bg-gray-800 text-gray-200 px-1.5 py-0.5 rounded text-sm font-mono wrap-break-word" {...rest}>
+                  <code className="bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-sm font-mono wrap-break-word transition-colors" {...rest}>
                     {children}
                   </code>
                 );
@@ -103,9 +104,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
               h3: ({children}) => <h3 className="text-lg font-bold mt-2 mb-1">{children}</h3>,
               ul: ({children}) => <ul className="list-disc list-inside my-2 space-y-1 ml-2">{children}</ul>,
               ol: ({children}) => <ol className="list-decimal list-inside my-2 space-y-1 ml-2">{children}</ol>,
-              strong: ({children}) => <strong className="font-semibold text-white">{children}</strong>,
-              hr: () => <hr className="border-gray-700 my-4" />,
-              a: ({children, href}) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline break-all">{children}</a>,
+              strong: ({children}) => <strong className="font-semibold text-slate-900 dark:text-white transition-colors">{children}</strong>,
+              hr: () => <hr className="border-slate-300 dark:border-slate-700 my-4 transition-colors" />,
+              a: ({children, href}) => <a href={href} target="_blank" rel="noopener noreferrer" className="text-sky-600 hover:underline dark:text-sky-400 break-all transition-colors">{children}</a>,
               p: ({children}) => <p className="mb-2 last:mb-0 max-w-full">{children}</p>
             }}
           >
@@ -115,7 +116,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
 
         <button
           onClick={() => handleCopyMessage(msg.content, index)}
-          className={`absolute ${msg.role === 'user' ? '-left-10 opacity-0 group-hover:opacity-100' : '-right-10'} bottom-2 p-1.5 rounded-lg transition-all text-gray-400 hover:text-white`}
+          className={`absolute ${msg.role === 'user' ? '-left-10 opacity-0 group-hover:opacity-100' : '-right-10'} bottom-2 p-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white`}
           title="Copiar mensagem"
         >
           {copiedMessageIndex === index ? <Check size={16} /> : <Copy size={16} />}
