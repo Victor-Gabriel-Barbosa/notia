@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="relative w-full" data-theme-trigger>
             <button 
               onClick={() => setThemeMenuOpen(!themeMenuOpen)}
-              className={`flex items-center ${sidebarOpen ? 'justify-start px-3 w-full py-3' : 'justify-center w-10 h-10'} hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:hover:bg-slate-900 dark:text-slate-400 dark:hover:text-white rounded-lg transition-colors`}
+              className={`flex items-center ${sidebarOpen ? 'justify-start px-3 w-full py-3' : 'justify-center w-10 h-10 mx-auto'} hover:bg-slate-200 text-slate-600 hover:text-slate-900 dark:hover:bg-slate-900 dark:text-slate-400 dark:hover:text-white rounded-lg transition-colors`}
               title={!sidebarOpen ? "Tema" : undefined}
             >
               {theme === 'light' ? <Sun size={18} /> : theme === 'dark' ? <Moon size={18} /> : <Monitor size={18} />}
