@@ -30,7 +30,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
   return (
     <div className={`flex gap-4 w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
       
-      <div className={`group relative max-w-[90%] sm:max-w-[80%] rounded-3xl px-5 py-3.5 transition-colors ${
+      <div className={`group relative max-w-full sm:max-w-[90%] rounded-3xl px-4 py-2.5 transition-colors ${
         msg.role === 'user' 
           ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-white' 
           : 'text-slate-900 dark:text-slate-100 bg-transparent px-0'
@@ -116,7 +116,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ msg, index, copiedMess
 
         <button
           onClick={() => handleCopyMessage(msg.content, index)}
-          className={`absolute ${msg.role === 'user' ? '-left-10 opacity-0 group-hover:opacity-100' : '-right-10'} bottom-2 p-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white`}
+          className={`absolute ${msg.role === 'user' ? 'left-0 opacity-0 max-md:opacity-100 group-hover:opacity-100' : 'right-0'} -bottom-7 p-1.5 rounded-lg transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white`}
           title="Copiar mensagem"
         >
           {copiedMessageIndex === index ? <Check size={16} /> : <Copy size={16} />}

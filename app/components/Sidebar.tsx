@@ -118,8 +118,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
               className={`group flex items-center ${sidebarOpen ? 'justify-between px-3 w-full py-2.5' : 'justify-center w-10 h-10 mt-1'} rounded-lg cursor-pointer transition-all ${
                 currentChatId === chat.id 
-                  ? 'bg-slate-200 text-slate-900 dark:bg-slate-800/80 dark:text-white' 
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200'
+                  ? 'bg-slate-300/60 text-slate-900 dark:bg-slate-800/80 dark:text-white' 
+                  : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-200'
               }`}
               title={!sidebarOpen ? chat.title : undefined}
             >
@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       e.stopPropagation();
                       setOpenMenuId(openMenuId === chat.id ? null : chat.id);
                     }}
-                    className={`shrink-0 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity ${
+                    className={`shrink-0 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 p-1 rounded-md opacity-0 max-sm:opacity-100 group-hover:opacity-100 transition-opacity ${
                       currentChatId === chat.id ? 'opacity-100' : ''
                     }`}
                   >

@@ -306,7 +306,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="w-full shrink-0 bg-white dark:bg-slate-900 pb-4 px-4 z-10 md:bg-gradient-to-t md:from-white md:via-white dark:md:from-slate-900 dark:md:via-slate-900 md:to-transparent transition-colors duration-200">
+        <div className="w-full shrink-0 bg-white dark:bg-slate-900 pb-4 px-4 z-10 md:bg-linear-to-t md:from-white md:via-white dark:md:from-slate-900 dark:md:via-slate-900 md:to-transparent transition-colors duration-200">
           <div className="max-w-3xl mx-auto relative flex flex-col bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl shadow-xl focus-within:ring-1 focus-within:ring-sky-500 transition-all duration-200">
             <textarea
               id="chat-input"
@@ -363,7 +363,7 @@ export default function App() {
               <button
                 onClick={isLoading ? handleStop : handleSend}
                 disabled={!isLoading && !input.trim()}
-                className={`p-2 rounded-xl transition-all ${isLoading
+                className={`p-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500 rounded-xl transition-all ${isLoading
                     ? 'bg-sky-600 text-white hover:bg-sky-700'
                     : input.trim() 
                       ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200' 
