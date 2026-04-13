@@ -363,10 +363,10 @@ export default function App() {
               <button
                 onClick={isLoading ? handleStop : handleSend}
                 disabled={!isLoading && !input.trim()}
-                className={`p-2 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500 rounded-xl transition-all ${isLoading
+                className={`p-2 rounded-xl transition-all ${isLoading
                     ? 'bg-sky-600 text-white hover:bg-sky-700'
                     : input.trim() 
-                      ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200' 
+                      ? 'bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600' 
                       : 'bg-slate-300 text-slate-400 dark:bg-slate-700 dark:text-slate-500 cursor-not-allowed'
                   }`}
                 title={isLoading ? "Parar geração" : "Enviar mensagem"}
