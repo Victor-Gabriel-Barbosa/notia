@@ -59,7 +59,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             />
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-slate-500 dark:text-slate-500">
-                Armazenada apenas no navegador.
+                Armazenado apenas no navegador.
               </p>
               <a 
                 href="https://openrouter.ai/keys" 

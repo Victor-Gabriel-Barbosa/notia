@@ -194,6 +194,8 @@ export default function App() {
       }
 
       const data = await response.json();
+      if (!data || !data.choices || data.choices.length === 0) throw new Error(`API Error: ${JSON.stringify(data)}`);
+
       const messageData = data.choices[0].message;
       const assistantMessage: Message = {
         role: 'assistant',
@@ -238,6 +240,76 @@ export default function App() {
       setCopiedMessageIndex(messageIndex);
       setTimeout(() => setCopiedMessageIndex(null), 2000);
     }).catch(err => console.error('Copy failed', err));
+  };
+
+  const handleSubmitEdit = async (newContent: string, index: number) => {
+    if (!newContent.trim() || isLoading) return;
+
+    const previousMessages = currentChat.messages.slice(0, index);
+    const userMessage: Message = { role: 'user', content: newContent.trim() };
+    const updatedMessages = [...previousMessages, userMessage];
+
+    let { title } = currentChat;
+    if (index === 0) title = newContent.length > 35 ? newContent.substring(0, 35) + '...' : newContent;
+
+    setChats(chats.map(c => c.id === currentChatId ? { ...c, title, messages: updatedMessages } : c));
+    setIsLoading(true);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location?.href || '',
+          'X-Title': 'NextJS Chatbot',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
+          ...(reasoningEnabled && { reasoning: { type: "enabled" } })
+        }),
+        signal: abortController.signal
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro na API: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      if (!data || !data.choices || data.choices.length === 0) throw new Error(`Erro na API: ${JSON.stringify(data)}`);
+
+      const messageData = data.choices[0].message;
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: messageData.content,
+        reasoning: messageData.reasoning || undefined
+      };
+
+      setChats(prevChats => prevChats.map(c =>
+        c.id === currentChatId ? { ...c, messages: [...c.messages, assistantMessage] } : c
+      ));
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') return;
+
+      console.error(error);
+      const errorMsg = error instanceof Error ? error.message : "Um erro desconhecido ocorreu.";
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: `**Erro:**\n\`\`\`\n${errorMsg}\n\`\`\`\n\nPor favor, verifique sua conexão com a internet e a chave da API em Configurações.`
+      };
+
+      setChats(prevChats => prevChats.map(c =>
+        c.id === currentChatId ? { ...c, messages: [...c.messages, errorMessage] } : c
+      ));
+    } finally {
+      setIsLoading(false);
+      abortControllerRef.current = null;
+    }
   };
 
   return (
@@ -286,6 +358,7 @@ export default function App() {
                     index={i}
                     copiedMessageIndex={copiedMessageIndex}
                     handleCopyMessage={handleCopyMessage}
+                    handleSubmitEdit={handleSubmitEdit}
                   />
                 ))}
                 {isLoading && (
